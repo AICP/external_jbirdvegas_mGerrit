@@ -80,7 +80,7 @@
     <string name="found_cards_toast" formatted="false"><![CDATA[Találtam %d commitot  %d mp alatt]]></string>
     <string name="cancel">Törlés</string>
     <string name="menu_projects">Projekt nézet</string>
-    <string name="aokp_changelog">AOKP VáltozásLista</string>
+    <string name="aicp_changelog">AICP VáltozásLista</string>
     <string name="download_update">Letöltés</string>
     <string name="please_select_update_for_range">Válassz fájlt a változáslista megtekintéséhez</string>
     <string name="download_rom_zip">ROM zip letöltése</string>

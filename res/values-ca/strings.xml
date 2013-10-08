@@ -76,7 +76,7 @@
     <string name="found_cards_toast" formatted="false"><![CDATA[S\'ha trobat %d validacions en %d segons]]></string>
     <string name="cancel">Cancel·la</string>
     <string name="menu_projects">Visualització per projecte</string>
-    <string name="aokp_changelog">Registre de canvis d\'AOKP</string>
+    <string name="aicp_changelog">Registre de canvis d\'AOKP</string>
     <string name="download_update">Baixa</string>
     <string name="please_select_update_for_range">Seleccioneu el fitxer per visualitzar la llista de canvis</string>
     <string name="download_rom_zip">Baixa un zip de ROM</string>

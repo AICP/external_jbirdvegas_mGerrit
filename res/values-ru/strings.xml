@@ -74,7 +74,7 @@
   <string name="found_cards_toast" formatted="false"><![CDATA[Найдено %d изменений за %d секунд]]></string>
   <string name="cancel">Отменить</string>
   <string name="menu_projects">По проектам</string>
-  <string name="aokp_changelog">Список изменений АОКР</string>
+  <string name="aicp_changelog">Список изменений АICР</string>
   <string name="download_update">Скачать</string>
   <string name="please_select_update_for_range">Пожалуйста, выберите файл для просмотра списка изменений</string>
   <string name="download_rom_zip">Скачать zip-файл с прошивкой</string>

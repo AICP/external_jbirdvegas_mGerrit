@@ -77,7 +77,7 @@
     <string name="found_cards_toast" formatted="false"><![CDATA[%dコミットを %d秒で見つけました]]></string>
     <string name="cancel">キャンセル</string>
     <string name="menu_projects">プロジェクト一覧</string>
-    <string name="aokp_changelog">AOKP変更履歴</string>
+    <string name="aicp_changelog">AICP変更履歴</string>
     <string name="download_update">ダウンロード</string>
     <string name="please_select_update_for_range">変更履歴を参照するファイルを選択してください</string>
     <string name="download_rom_zip">ROM zipをダウンロード</string>

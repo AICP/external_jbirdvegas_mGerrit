@@ -414,7 +414,7 @@ public class GerritControllerActivity extends FragmentActivity {
     // Hide the AOKP Changelog menu option when AOKP's Gerrit is not selected
     private void hideChangelogOption(String gerrit) {
         MenuItem changelog = mMenu.findItem(R.id.menu_changelog);
-        if (gerrit.contains("aokp")) {
+        if (gerrit.contains("aicp")) {
             changelog.setVisible(true);
         } else {
             changelog.setVisible(false);

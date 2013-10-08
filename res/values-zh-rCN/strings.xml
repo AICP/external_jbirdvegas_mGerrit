@@ -80,7 +80,7 @@
     <string name="found_cards_toast" formatted="false"><![CDATA[找到 %d 提交耗时 %d 秒]]></string>
     <string name="cancel">取消</string>
     <string name="menu_projects">按项目查看</string>
-    <string name="aokp_changelog">AOKP 更新日志</string>
+    <string name="aicp_changelog">AICP 更新日志</string>
     <string name="download_update">下载</string>
     <string name="please_select_update_for_range">请选择文件查看更新日志</string>
     <string name="download_rom_zip">下载zip格式ROM</string>

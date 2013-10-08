@@ -18,6 +18,7 @@
 
 <resources>
     <string-array name="gerrit_names">
+        <item>AICP</item>
         <item>AOKP</item>
         <item>AOSP</item>
         <item>Gerrit Review</item>
@@ -25,6 +26,7 @@
         <item>Paranoid Android</item>
     </string-array>
     <string-array name="gerrit_webaddresses">
+        <item>http://gerrit.zips.net</item>
         <item>http://gerrit.aokp.co/</item>
         <item>https://android-review.googlesource.com/</item>
         <item>https://gerrit-review.googlesource.com/</item>

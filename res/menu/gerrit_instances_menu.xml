@@ -42,7 +42,7 @@
 
     <item
         android:id="@+id/menu_changelog"
-        android:title="@string/aokp_changelog"
+        android:title="@string/aicp_changelog"
         android:showAsAction="never"/>
 
     <item
