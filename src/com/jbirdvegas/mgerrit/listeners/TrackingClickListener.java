@@ -96,7 +96,7 @@ public class TrackingClickListener implements View.OnClickListener {
         // Show content of a single user
         if (mCommitterObject != null && mProjectPath == null && mChangeLogRange == null) {
             // ask which content we are interested in
-            CardsFragment.sSkipStalking = false;
+            CardsFragment.mSkipStalking = false;
             AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
             builder.setTitle(R.string.context_menu_view_diff_dialog);
 
@@ -126,7 +126,7 @@ public class TrackingClickListener implements View.OnClickListener {
             // Show content of an entire project relative to our current status
             Prefs.setCurrentProject(mContext, mProjectPath);
         } else if (mCommitterObject != null && mProjectPath != null && mChangeLogRange == null) {
-            CardsFragment.sSkipStalking = false;
+            CardsFragment.mSkipStalking = false;
         } else if (mCommitterObject != null && mProjectPath != null && mChangeLogRange != null) {
             Intent changelogStalker = Prefs.getStalkerIntent(mContext, mCommitterObject)
                     .putExtra(JSONCommit.KEY_PROJECT, mProjectPath)
