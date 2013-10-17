@@ -29,7 +29,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.fima.cardsui.objects.Card;
-import com.fima.cardsui.objects.RecyclableCard;
 import com.jbirdvegas.mgerrit.Prefs;
 import com.jbirdvegas.mgerrit.R;
 import com.jbirdvegas.mgerrit.dialogs.DiffDialog;
@@ -39,28 +38,43 @@ import com.jbirdvegas.mgerrit.objects.JSONCommit;
 
 import java.util.List;
 
-public class PatchSetChangesCard extends RecyclableCard {
+public class PatchSetChangesCard extends Card {
     private static final String TAG = PatchSetChangesCard.class.getSimpleName();
     private static final boolean VERBOSE = false;
     private JSONCommit mCommit;
-    private final Activity mActivity;
+    private LayoutInflater mInflater;
+    private final Activity mCardsActivity;
     private AlertDialog mAlertDialog;
-    private final int mGreen;
-    private final int mRed;
 
     public PatchSetChangesCard(JSONCommit commit, Activity activity) {
         mCommit = commit;
-        mActivity = activity;
+        mCardsActivity = activity;
+    }
 
-        mGreen = mActivity.getResources().getColor(R.color.text_green);
-        mRed = mActivity.getResources().getColor(R.color.text_red);
+    @Override
+    public View getCardContent(final Context context) {
+        mInflater = (LayoutInflater)
+                context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        ViewGroup rootView = (ViewGroup) mInflater.inflate(R.layout.linear_layout, null);
+        List<ChangedFile> changedFileList = mCommit.getChangedFiles();
+        // its possible for this to be null so watch out
+        if (changedFileList == null) {
+            // EEK! just show a simple not found message
+            // TODO Show some error message?
+        } else {
+            for (ChangedFile changedFile : changedFileList) {
+                // generate and add the Changed File Views
+                if (rootView != null) {
+                    rootView.addView(generateChangedFileView(changedFile, context));
+                }
+
+            }
+        }
+        return rootView;
     }
 
     private View generateChangedFileView(final ChangedFile changedFile, final Context context) {
-
-        LayoutInflater inflater = (LayoutInflater)
-                context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View innerRootView = inflater.inflate(R.layout.patchset_file_changed_list_item, null);
+        View innerRootView = mInflater.inflate(R.layout.patchset_file_changed_list_item, null);
         innerRootView.setTag(changedFile);
         TextView path = (TextView)
                 innerRootView.findViewById(R.id.changed_file_path);
@@ -89,6 +103,7 @@ public class PatchSetChangesCard extends RecyclableCard {
                 inserted.setVisibility(View.GONE);
                 insText.setVisibility(View.GONE);
             } else {
+                int mGreen = context.getResources().getColor(R.color.text_green);
                 inserted.setText('+' + String.valueOf(changedFile.getInserted()));
                 inserted.setTextColor(mGreen);
             }
@@ -97,6 +112,7 @@ public class PatchSetChangesCard extends RecyclableCard {
                 deleted.setVisibility(View.GONE);
                 delText.setVisibility(View.GONE);
             } else {
+                int mRed = context.getResources().getColor(R.color.text_red);
                 deleted.setText('-' + String.valueOf(changedFile.getDeleted()));
                 deleted.setTextColor(mRed);
             }
@@ -104,7 +120,7 @@ public class PatchSetChangesCard extends RecyclableCard {
         innerRootView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
-                AlertDialog.Builder ad = new AlertDialog.Builder(mActivity)
+                AlertDialog.Builder ad = new AlertDialog.Builder(mCardsActivity)
                         .setTitle(R.string.choose_diff_view);
                 // TODO XXX ABANDONED till APIs are stable on Google's side :(
                 ad.setPositiveButton(R.string.context_menu_view_diff_dialog, new DialogInterface.OnClickListener() {
@@ -118,7 +134,7 @@ public class PatchSetChangesCard extends RecyclableCard {
                         String base = "%schanges/%s/revisions/current/patch";
                         String base64 = "%schanges/%s/revisions/%s/files/%s/content";
                         String url = String.format(base,
-                                Prefs.getCurrentGerrit(mActivity),
+                                Prefs.getCurrentGerrit(mCardsActivity),
                                 mCommit.getId());
                                 //mCommit.getCurrentRevision(),
                                 //URLEncoder.encode(((ChangedFile) view.getTag()).getPath()));
@@ -147,43 +163,17 @@ public class PatchSetChangesCard extends RecyclableCard {
         return innerRootView;
     }
 
-    @Override
-    protected void applyTo(View convertView) {
-
-        ViewGroup view = (ViewGroup) convertView;
-        List<ChangedFile> changedFileList = mCommit.getChangedFiles();
-        // its possible for this to be null so watch out
-        if (changedFileList == null) {
-            // EEK! just show a simple not found message
-            // TODO Show some error message?
-            Log.e(TAG, "Could not find the list of changed files for this commit.");
-        } else {
-            for (ChangedFile changedFile : changedFileList) {
-                // generate and add the Changed File Views
-                if (view != null) {
-                    view.addView(generateChangedFileView(changedFile, mActivity));
-                }
-
-            }
-        }
-    }
-
-    @Override
-    protected int getCardLayoutId() {
-        return R.layout.linear_layout;
-    }
-
     // creates the Diff viewer dialog
     private void launchDiffDialog(String url, ChangedFile changedFile) {
         Log.d(TAG, "Attempting to contact: " + url);
-        DiffDialog diffDialog = new DiffDialog(mActivity, url, changedFile);
+        DiffDialog diffDialog = new DiffDialog(mCardsActivity, url, changedFile);
         diffDialog.addExceptionCallback(new DiffDialog.DiffFailCallback() {
             @Override
             public void killDialogAndErrorOut(Exception e) {
                 if (mAlertDialog != null) {
                     mAlertDialog.cancel();
                 }
-                Tools.showErrorDialog(mActivity, e);
+                Tools.showErrorDialog(mCardsActivity, e);
             }
         });
         mAlertDialog = diffDialog.create();

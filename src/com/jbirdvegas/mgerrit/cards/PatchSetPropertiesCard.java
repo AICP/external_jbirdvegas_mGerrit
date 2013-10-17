@@ -20,23 +20,27 @@ package com.jbirdvegas.mgerrit.cards;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import com.android.volley.RequestQueue;
-import com.fima.cardsui.objects.RecyclableCard;
+import com.fima.cardsui.objects.Card;
 import com.jbirdvegas.mgerrit.PatchSetViewerFragment;
 import com.jbirdvegas.mgerrit.R;
 import com.jbirdvegas.mgerrit.helpers.GravatarHelper;
 import com.jbirdvegas.mgerrit.listeners.TrackingClickListener;
 import com.jbirdvegas.mgerrit.objects.JSONCommit;
 
-public class PatchSetPropertiesCard extends RecyclableCard {
+public class PatchSetPropertiesCard extends Card {
     private final JSONCommit mJSONCommit;
     private final PatchSetViewerFragment mPatchSetViewerFragment;
     private final RequestQueue mRequestQuery;
     private final Context mContext;
+    private TextView mSubject;
+    private TextView mOwner;
+    private TextView mAuthor;
+    private TextView mCommitter;
 
     public PatchSetPropertiesCard(JSONCommit commit,
                                   PatchSetViewerFragment activity,
@@ -49,73 +53,65 @@ public class PatchSetPropertiesCard extends RecyclableCard {
     }
 
     @Override
-    protected void applyTo(View convertView) {
+    public View getCardContent(Context context) {
+        LayoutInflater inflater = (LayoutInflater)
+                context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View rootView = inflater.inflate(R.layout.properties_card, null);
+        mSubject = (TextView) rootView.findViewById(R.id.prop_card_subject);
+        mOwner = (TextView) rootView.findViewById(R.id.prop_card_owner);
+        mAuthor = (TextView) rootView.findViewById(R.id.prop_card_author);
+        mCommitter = (TextView) rootView.findViewById(R.id.prop_card_committer);
 
-        ViewHolder viewHolder = (ViewHolder) convertView.getTag();
-        if (convertView.getTag() == null) {
-            viewHolder = new ViewHolder();
-
-            viewHolder.subject = (TextView) convertView.findViewById(R.id.prop_card_subject);
-            viewHolder.owner = (TextView) convertView.findViewById(R.id.prop_card_owner);
-            viewHolder.author = (TextView) convertView.findViewById(R.id.prop_card_author);
-            viewHolder.committer = (TextView) convertView.findViewById(R.id.prop_card_committer);
-            convertView.setTag(viewHolder);
-        }
-
-        viewHolder.subject.setText(mJSONCommit.getSubject());
-        viewHolder.owner.setText(mJSONCommit.getOwnerObject().getName());
+        mSubject.setText(mJSONCommit.getSubject());
+        mOwner.setText(mJSONCommit.getOwnerObject().getName());
         // attach owner's gravatar
         GravatarHelper.attachGravatarToTextView(
-                viewHolder.owner,
+                mOwner,
                 mJSONCommit.getOwnerObject().getEmail(),
                 mRequestQuery);
-        viewHolder.owner.setOnClickListener(new TrackingClickListener(
+        mOwner.setOnClickListener(new TrackingClickListener(
                 mContext,
                 mJSONCommit.getOwnerObject()
         ));
-        viewHolder.owner.setTag(mJSONCommit.getOwnerObject());
-        setContextMenu(viewHolder.owner);
+        mOwner.setTag(mJSONCommit.getOwnerObject());
+        setContextMenu(mOwner);
         setClicksToActionViews(
-                (ImageView) convertView.findViewById(R.id.properties_card_share_info),
-                (ImageView) convertView.findViewById(R.id.properties_card_view_in_browser));
+                (ImageView) rootView.findViewById(R.id.properties_card_share_info),
+                (ImageView) rootView.findViewById(R.id.properties_card_view_in_browser));
         try {
             // set text will throw NullPointer if
             // we don't have author/committer objects
-            viewHolder.author.setText(mJSONCommit.getAuthorObject().getName());
-            viewHolder.author.setOnClickListener(
+            mAuthor.setText(mJSONCommit.getAuthorObject().getName());
+            mAuthor.setOnClickListener(
                     new TrackingClickListener(
                             mContext,
                             mJSONCommit.getAuthorObject()));
-            viewHolder.committer.setText(mJSONCommit.getCommitterObject().getName());
-            viewHolder.committer.setOnClickListener(
+            mCommitter.setText(mJSONCommit.getCommitterObject().getName());
+            mCommitter.setOnClickListener(
                     new TrackingClickListener(
                             mContext,
                             mJSONCommit.getCommitterObject()));
             // setup contextmenu click actions
-            viewHolder.author.setTag(mJSONCommit.getAuthorObject());
-            setContextMenu(viewHolder.author);
-            viewHolder.committer.setTag(mJSONCommit.getCommitterObject());
-            setContextMenu(viewHolder.committer);
+            mAuthor.setTag(mJSONCommit.getAuthorObject());
+            setContextMenu(mAuthor);
+            mCommitter.setTag(mJSONCommit.getCommitterObject());
+            setContextMenu(mCommitter);
             // attach gravatars (if objects are not null)
             GravatarHelper.attachGravatarToTextView(
-                    viewHolder.author,
+                    mAuthor,
                     mJSONCommit.getAuthorObject().getEmail(),
                     mRequestQuery);
             GravatarHelper.attachGravatarToTextView(
-                    viewHolder.committer,
+                    mCommitter,
                     mJSONCommit.getCommitterObject().getEmail(),
                     mRequestQuery);
         } catch (NullPointerException npe) {
-            convertView.findViewById(R.id.prop_card_author)
+            rootView.findViewById(R.id.prop_card_author)
                     .setVisibility(View.GONE);
-            convertView.findViewById(R.id.prop_card_committer)
+            rootView.findViewById(R.id.prop_card_committer)
                     .setVisibility(View.GONE);
         }
-    }
-
-    @Override
-    protected int getCardLayoutId() {
-        return R.layout.properties_card;
+        return rootView;
     }
 
     private void setClicksToActionViews(ImageView share, ImageView browser) {
@@ -144,12 +140,5 @@ public class PatchSetPropertiesCard extends RecyclableCard {
 
     private void setContextMenu(TextView textView) {
         mPatchSetViewerFragment.registerViewForContextMenu(textView);
-    }
-
-    private static class ViewHolder {
-        TextView subject;
-        TextView owner;
-        TextView author;
-        TextView committer;
     }
 }

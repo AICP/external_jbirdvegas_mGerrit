@@ -2,6 +2,7 @@ package com.fima.cardsui.views;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -15,7 +16,6 @@ import android.widget.FrameLayout;
 import android.widget.Space;
 import android.widget.TableLayout;
 import android.widget.TableRow;
-
 import com.fima.cardsui.StackAdapter;
 import com.fima.cardsui.objects.AbstractCard;
 import com.fima.cardsui.objects.Card;
@@ -33,8 +33,11 @@ public class CardUI extends FrameLayout {
     private static final int STATE_ONSCREEN = 0;
     private static final int STATE_OFFSCREEN = 1;
     private static final int STATE_RETURNING = 2;
-    protected int renderedCardsStacks = 0;
-    protected int mScrollY;
+
+    public interface OnRenderedListener {
+        public void onRendered();
+    }
+
     /**
      * *****************************
      * Fields
@@ -61,6 +64,9 @@ public class CardUI extends FrameLayout {
     private int mCachedVerticalScrollRange;
     private boolean mSwipeable = false;
     private OnRenderedListener onRenderedListener;
+    protected int renderedCardsStacks = 0;
+
+    protected int mScrollY;
     private StackAdapter mAdapter;
     private View mHeader;
 
@@ -96,17 +102,18 @@ public class CardUI extends FrameLayout {
         mContext = context;
         LayoutInflater inflater = LayoutInflater.from(context);
         mStacks = new ArrayList<AbstractCard>();
+
         //inflate a different layout, depending on the number of columns
         if (mColumnNumber == 1) {
             inflater.inflate(R.layout.cards_view, this);
             // init observable scrollview
             mListView = (QuickReturnListView) findViewById(R.id.listView);
+
         } else {
             //initialize the mulitcolumn view
             inflater.inflate(R.layout.cards_view_multicolumn, this);
             mTableLayout = (TableLayout) findViewById(R.id.tableLayout);
         }
-        // mListView.setCallbacks(this);
 
         mHeader = inflater.inflate(R.layout.header, null);
         mQuickReturnView = (ViewGroup) findViewById(R.id.sticky);
@@ -194,7 +201,7 @@ public class CardUI extends FrameLayout {
                     TranslateAnimation anim = new TranslateAnimation(0, 0,
                             translationY, translationY);
                     anim.setFillAfter(true);
-                    anim.setDuration(0);
+                    anim.setDuration(10);
                     mQuickReturnView.startAnimation(anim);
                 } else {
                     mQuickReturnView.setTranslationY(translationY);
@@ -248,24 +255,6 @@ public class CardUI extends FrameLayout {
         return mStacks.size() - 1;
     }
 
-    public void addSeparateCards(Card[] cards) {
-
-        addSeparateCards(cards, false);
-
-    }
-
-    public void addSeparateCards(Card[] cards, boolean refresh) {
-
-        for (int i = 0; i < cards.length; i++) {
-            CardStack stack = new CardStack();
-            stack.add(cards[i]);
-            mStacks.add(stack);
-        }
-
-        if (refresh)
-            refresh();
-    }
-
     public void addCard(Card card) {
 
         addCard(card, false);
@@ -279,7 +268,7 @@ public class CardUI extends FrameLayout {
         mStacks.add(stack);
         if (refresh)
             refresh();
-
+        mListView.startLayoutAnimation();
     }
 
     public void addCardToLastStack(Card card) {
@@ -316,58 +305,23 @@ public class CardUI extends FrameLayout {
     //suppress this error message to be able to use spaces in higher api levels
     @SuppressLint("NewApi")
     public void refresh() {
-
         if (mAdapter == null) {
             mAdapter = new StackAdapter(mContext, mStacks, mSwipeable);
             if (mListView != null) {
                 mListView.setAdapter(mAdapter);
             } else if (mTableLayout != null) {
-                TableRow tr = null;
-                for (int i = 0; i < mAdapter.getCount(); i += mColumnNumber) {
-                    //add a new table row with the current context
-                    tr = (TableRow) new TableRow(mTableLayout.getContext());
-                    tr.setOrientation(TableRow.HORIZONTAL);
-                    tr.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT,
-                            TableRow.LayoutParams.WRAP_CONTENT));
-                    //add as many cards as the number of columns indicates per row
-                    for (int j = 0; j < mColumnNumber; j++) {
-                        if (i + j < mAdapter.getCount()) {
-                            View card = mAdapter.getView(i + j, null, tr);
-                            if (card.getLayoutParams() != null) {
-                                card.setLayoutParams(new TableRow.LayoutParams(card.getLayoutParams().width, card.getLayoutParams().height, 1f));
-                            } else {
-                                card.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT, 1f));
-                            }
-                            tr.addView(card);
-                        }
-                    }
-                    mTableLayout.addView(tr);
-                }
-                if (tr != null) {
-                    //fill the empty space with spacers
-                    for (int j = mAdapter.getCount() % mColumnNumber; j > 0; j--) {
-                        View space = null;
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-                            space = new Space(tr.getContext());
-                        } else {
-                            space = new View(tr.getContext());
-                        }
-                        space.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT, 1f));
-                        tr.addView(space);
-                    }
-                }
-
+                //add as many cards as the number of columns indicates per row
+                new TableRowsWorkerThread().execute();
             }
         } else {
             mAdapter.setSwipeable(mSwipeable); // in case swipeable changed;
             mAdapter.setItems(mStacks);
-
         }
-
+        ((FrameLayout) this.findViewById(R.id.layoutCardsView)).invalidate();
     }
 
     public void clearCards() {
-        mStacks = new ArrayList<AbstractCard>();
+        mStacks = new ArrayList<AbstractCard>(0);
         renderedCardsStacks = 0;
         refresh();
     }
@@ -387,8 +341,64 @@ public class CardUI extends FrameLayout {
         this.onRenderedListener = onRenderedListener;
     }
 
-    public interface OnRenderedListener {
-        public void onRendered();
-    }
+    /**
+     * Generate cards in a worker thread.
+     */
+    private class TableRowsWorkerThread extends AsyncTask<Void, Void, Void> {
+        TableRow mTableRow = null;
 
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+        }
+
+        @Override
+        protected Void doInBackground(Void... unused) {
+            for (int i = 0; i < mAdapter.getCount(); i += mColumnNumber) {
+                //add a new table row with the current context
+                mTableRow = (TableRow) new TableRow(mTableLayout.getContext());
+                mTableRow.setOrientation(TableRow.HORIZONTAL);
+                mTableRow.setLayoutParams(
+                        new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT,
+                                TableRow.LayoutParams.WRAP_CONTENT));
+                for (int j = 0; j < mColumnNumber; j++) {
+                    if (i + j < mAdapter.getCount()) {
+                        View card = mAdapter.getView(i + j, null, mTableRow);
+                        if (card.getLayoutParams() != null) {
+                            card.setLayoutParams(
+                                    new TableRow.LayoutParams(
+                                            card.getLayoutParams().width,
+                                            card.getLayoutParams().height, 1f));
+                        } else {
+                            card.setLayoutParams(
+                                    new TableRow.LayoutParams(
+                                            TableRow.LayoutParams.MATCH_PARENT,
+                                            TableRow.LayoutParams.WRAP_CONTENT, 1f));
+                        }
+                        mTableRow.addView(card);
+                    }
+                }
+            }
+            mTableLayout.addView(mTableRow);
+            if (mTableRow != null) {
+                //fill the empty space with spacers
+                for (int j = mAdapter.getCount() % mColumnNumber; j > 0; j--) {
+                    View space = null;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                        space = new Space(mTableRow.getContext());
+                    } else {
+                        space = new View(mTableRow.getContext());
+                    }
+                    space.setLayoutParams(
+                            new TableRow.LayoutParams(
+                                    TableRow.LayoutParams.MATCH_PARENT,
+                                    TableRow.LayoutParams.WRAP_CONTENT, 1f));
+                    mTableRow.addView(space);
+                }
+                mTableLayout.addView(mTableRow);
+            }
+            return null;
+        }
+    }
 }

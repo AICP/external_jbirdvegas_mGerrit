@@ -17,12 +17,14 @@ package com.jbirdvegas.mgerrit.cards;
  *  limitations under the License.
  */
 
+import android.content.Context;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
-import com.fima.cardsui.objects.RecyclableCard;
+import com.fima.cardsui.objects.Card;
 import com.jbirdvegas.mgerrit.CardsFragment;
 import com.jbirdvegas.mgerrit.GerritControllerActivity;
 import com.jbirdvegas.mgerrit.R;
@@ -30,10 +32,11 @@ import com.jbirdvegas.mgerrit.caches.BitmapLruCache;
 import com.jbirdvegas.mgerrit.helpers.GravatarHelper;
 import com.jbirdvegas.mgerrit.objects.CommitterObject;
 
-public class ImageCard extends RecyclableCard {
+public class ImageCard extends Card {
 
-    private GerritControllerActivity mActivity;
+    private GerritControllerActivity mGerritControllerActivity;
     private CardsFragment mCardsFragment;
+    private final String mTitle;
     private final RequestQueue mRequestQuery;
     private NetworkImageView mUserGravatar;
     private final CommitterObject mCommitterObject;
@@ -44,37 +47,36 @@ public class ImageCard extends RecyclableCard {
                      String title,
                      CommitterObject committerObject) {
         super(title);
-        mActivity = gerritControllerActivity;
+        mGerritControllerActivity = gerritControllerActivity;
         mCardsFragment = cardsFragment;
+        mTitle = title;
         mCommitterObject = committerObject;
         mRequestQuery = requestQueue;
     }
 
     @Override
-    protected void applyTo(View convertView) {
-        ((TextView) convertView.findViewById(R.id.card_picture_title))
+    public View getCardContent(Context context) {
+        View view = LayoutInflater.from(context)
+                .inflate(R.layout.card_picture, null);
+        ((TextView) view.findViewById(R.id.card_picture_title))
                 .setText(title);
         mUserGravatar = (NetworkImageView)
-                convertView.findViewById(R.id.card_picture_image);
+                view.findViewById(R.id.card_picture_image);
         mUserGravatar.setImageUrl(
                 GravatarHelper.getGravatarUrl(
                         mCommitterObject.getEmail()),
                 new ImageLoader(mRequestQuery,
-                        new BitmapLruCache(mActivity)));
-        ((TextView) convertView.findViewById(R.id.card_picture_user))
+                        new BitmapLruCache(context)));
+        ((TextView) view.findViewById(R.id.card_picture_user))
                 .setText(mCommitterObject.getEmail());
-        convertView.findViewById(R.id.remove_content).setOnClickListener(new View.OnClickListener() {
+        view.findViewById(R.id.remove_content).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mCardsFragment.mSkipStalking = true;
                 OnSwipeCard();
-                mActivity.refreshTabs();
+                mGerritControllerActivity.refreshTabs();
             }
         });
-    }
-
-    @Override
-    protected int getCardLayoutId() {
-        return R.layout.card_picture;
+        return view;
     }
 }
