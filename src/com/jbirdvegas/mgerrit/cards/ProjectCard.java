@@ -17,46 +17,46 @@ package com.jbirdvegas.mgerrit.cards;
  *  limitations under the License.
  */
 
+import android.content.Context;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.fima.cardsui.objects.RecyclableCard;
+import com.fima.cardsui.objects.Card;
 import com.jbirdvegas.mgerrit.GerritControllerActivity;
 import com.jbirdvegas.mgerrit.Prefs;
 import com.jbirdvegas.mgerrit.R;
 
-public class ProjectCard extends RecyclableCard {
+public class ProjectCard extends Card {
 
-    private GerritControllerActivity mActivity;
+    private GerritControllerActivity mGerritControllerActivity;
     private String mProject;
 
     public ProjectCard(GerritControllerActivity gerritControllerActivity, String project) {
-        mActivity = gerritControllerActivity;
+        mGerritControllerActivity = gerritControllerActivity;
         mProject = project;
     }
 
-    private void removeMe() {
-        super.OnSwipeCard();
-    }
-
     @Override
-    protected void applyTo(View convertView) {
-        TextView project = (TextView) convertView.findViewById(R.id.content);
+    public View getCardContent(Context context) {
+        LayoutInflater layoutInflater =
+                (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View root = layoutInflater.inflate(R.layout.removable_card, null);
+        TextView project = (TextView) root.findViewById(R.id.content);
         project.setText(mProject);
-        ImageView removeContentButton = (ImageView) convertView.findViewById(R.id.removable_content_button);
+        ImageView removeContentButton = (ImageView) root.findViewById(R.id.removable_content_button);
         removeContentButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Prefs.setCurrentProject(v.getContext(), "");
                 removeMe();
-                mActivity.refreshTabs();
+                mGerritControllerActivity.refreshTabs();
             }
         });
+        return root;
     }
 
-    @Override
-    protected int getCardLayoutId() {
-        return R.layout.removable_card;
+    private void removeMe() {
+        super.OnSwipeCard();
     }
 }
